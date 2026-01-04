@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Rechnung {{ invoice.nummer }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        h1 { text-align: center; }
+        .header, .footer { width: 100%; margin-bottom: 20px; }
+        .header .left, .header .right { width: 48%; display: inline-block; vertical-align: top; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; }
+        th { background-color: #f2f2f2; }
+        .total { text-align: right; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Rechnung</h1>
+
+    <div class="header">
+        <div class="left">
+            <strong>Rechnungsnummer:</strong> {{ invoice.nummer }}<br>
+            <strong>Rechnungsdatum:</strong> {{ invoice.created_at.date() if invoice.created_at else invoice.monat }}<br>
+            <strong>Zeitraum:</strong> {{ invoice.monat }}
+        </div>
+        <div class="right">
+            <strong>Kunde:</strong><br>
+            {{ invoice.customer.name }}<br>
+            {{ invoice.customer.adresse }}
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Position</th>
+                <th>Beschreibung</th>
+                <th>Menge</th>
+                <th>Einzelpreis</th>
+                <th>Währung</th>
+                <th>Betrag</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pos in positions %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ pos.beschreibung }}</td>
+                <td style="text-align: right;">{{ "{:.2f}".format(pos.menge) }}</td>
+                <td style="text-align: right;">{{ "{:.2f}".format(pos.einzelpreis) }}</td>
+                <td>{{ pos.waehrung }}</td>
+                <td style="text-align: right;">
+                    {{ "{:.2f}".format(pos.menge * pos.einzelpreis) }} {{ pos.waehrung }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p class="total">
+        Gesamtbetrag: {{ "{:.2f}".format(invoice.gesamtbetrag) }} {{ invoice.zielwaehrung }}
+    </p>
+
+    {% if positions|selectattr("attachment_path")|list %}
+    <h3>Anlagen</h3>
+    <ul>
+        {% for pos in positions %}
+            {% if pos.attachment_path %}
+                <li>Position {{ loop.index }}: {{ pos.attachment_path }}</li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="footer">
+        <p>Vielen Dank für Ihr Vertrauen!</p>
+    </div>
+</body>
+</html>
