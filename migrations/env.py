@@ -1,49 +1,56 @@
 from logging.config import fileConfig
 import os
+import sys
+from pathlib import Path
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# 👉 neu: Importiere Base und engine aus deinem Projekt
-from app.db.models import Base
-from app.db.session import engine as app_engine
+# Projektroot in sys.path (damit "import app..." sicher funktioniert)
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-# Alembic Config-Objekt
+from app.db.models import Base  # <-- wichtig!
+
 config = context.config
 
-# Logging konfigurieren
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 👉 neu: Setze target_metadata auf das Metadata-Objekt deines Modells
-target_metadata = Base.metadata
+target_metadata = Base.metadata  # <-- WICHTIG
+
+def get_url():
+    return os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode."""
-    # Hole die URL entweder aus der alembic.ini oder aus der Umgebung
-    url = config.get_main_option("sqlalchemy.url") or os.getenv("DATABASE_URL")
+    url = get_url()
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        compare_type=True,
     )
     with context.begin_transaction():
         context.run_migrations()
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode."""
-    # 👉 neu: Verwende den bereits konfigurierten Engine aus deiner App,
-    #         anstatt engine_from_config zu benutzen.
-    connectable = app_engine
+    url = get_url()
+    section = config.get_section(config.config_ini_section) or {}
+    section["sqlalchemy.url"] = url
+
+    connectable = engine_from_config(
+        section,
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
 
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            compare_type=True,   # erkennt auch Spaltentyp-Änderungen
+            compare_type=True,
         )
-
         with context.begin_transaction():
             context.run_migrations()
 

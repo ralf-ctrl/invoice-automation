@@ -60,3 +60,17 @@ class ExchangeRate(Base):
     von = Column(String, nullable=False)
     nach = Column(String, nullable=False)
     kurs = Column(Numeric, nullable=False)
+class PositionTemplate(Base):
+    __tablename__ = "position_template"
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(UUID(as_uuid=True), unique=True, nullable=False, default=uuid.uuid4)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now(), nullable=False)
+
+    name = Column(String, nullable=False)  # z.B. "Beratung"
+    beschreibung = Column(String, nullable=False)
+    standard_menge = Column(Numeric, nullable=False, default=1)
+    einzelpreis = Column(Numeric, nullable=False)
+    waehrung = Column(String, nullable=False, default="EUR")
+    attachment_path = Column(String, nullable=True)
