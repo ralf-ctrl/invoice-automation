@@ -1,6 +1,51 @@
+# =====================
+# Environment / Secrets
+# =====================
 .env
+
+# =====================
+# Python
+# =====================
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 *.db
-.mypy_cache/
+
+# =====================
+# Virtual Environments
+# =====================
+.venv/
+venv/
+env/
+
+# =====================
+# IDEs / Editor
+# =====================
+.idea/
 .vscode/
+*.iml
+
+# =====================
+# Streamlit
+# =====================
+.streamlit/
+
+# =====================
+# Generated artifacts
+# =====================
+invoices/
+*.pdf
+
+# =====================
+# Lint / Test / Cache
+# =====================
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# =====================
+# OS
+# =====================
 .DS_Store
