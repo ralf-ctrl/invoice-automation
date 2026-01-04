@@ -1,0 +1,7 @@
+streamlit
+SQLAlchemy
+alembic
+psycopg[binary]
+jinja2
+weasyprint
+python-dotenv
