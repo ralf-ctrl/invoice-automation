@@ -1,0 +1,34 @@
+# ADR-005 – ORM-Nutzung und Datenbank-Migrationen
+
+## Status
+Accepted
+
+## Kontext
+Um unser Datenmodell konsistent zu halten und Änderungen reproduzierbar zu gestalten, benötigen wir eine einheitliche Implementierung der Datenzugriffsschicht sowie ein Werkzeug für versionierte Schema-Updates. Zudem haben wir beschlossen, UUIDs und Timestamps in allen Tabellen zu verwenden.
+
+## Entscheidung
+- Verwendung von **SQLAlchemy** als ORM, mit zusätzlichen Spalten `uuid`, `created_at` und `updated_at`.
+- Einsatz von **Alembic** für versionierte Migrationen.
+- Beibehaltung von integerbasierten Primärschlüsseln, aber Nutzung der UUID als externe Referenz.
+- Dokumentation der Tabellenstruktur (siehe unten).
+
+## Begründung
+- SQLAlchemy bietet eine klare, objektorientierte Abbildung des relationalen Modells.
+- UUIDs ermöglichen eine global eindeutige Identifikation von Datensätzen.
+- Zeitstempel (`created_at`, `updated_at`) erhöhen die Nachvollziehbarkeit.
+- Alembic ist das Standardwerkzeug für Migrationen mit SQLAlchemy und funktioniert nahtlos mit PostgreSQL/Neon.
+
+## Tabellenübersicht
+
+| Tabelle              | Schlüsselfelder / Spalten                                           |
+|----------------------|---------------------------------------------------------------------|
+| `customer`           | id (PK), uuid, created_at, updated_at, name, adresse, standard_currency, company_number, vat_number, tax_number |
+| `invoice`            | id (PK), uuid, created_at, updated_at, nummer, monat, kunde_id (FK), gesamtbetrag, zielwaehrung, status |
+| `invoice_position`   | id (PK), uuid, created_at, updated_at, invoice_id (FK), beschreibung, menge, einzelpreis, waehrung, attachment_path |
+| `exchange_rate`      | id (PK), uuid, created_at, updated_at, datum, von, nach, kurs |
+
+## Konsequenzen
+- Jede Schemaänderung erfordert eine neue Alembic-Revision und ein Upgrade.
+- Entwickler müssen sicherstellen, dass `DATABASE_URL` gesetzt ist, damit Migrationen funktionieren.
+- Tabellenänderungen müssen sowohl im ORM-Modell als auch in einer Migration gepflegt werden.
+- UUID- und Timestamp-Spalten erhöhen Speicherbedarf leicht, bieten aber Vorteile bei Nachvollziehbarkeit und externen Referenzen.
