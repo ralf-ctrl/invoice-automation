@@ -1,6 +1,7 @@
 from logging.config import fileConfig
 import os
 import sys
+import sqlalchemy as sa
 from pathlib import Path
 
 from sqlalchemy import engine_from_config, pool
@@ -21,7 +22,19 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata  # <-- WICHTIG
 
 def get_url():
-    return os.getenv("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+    url = os.getenv("DATABASE_URL")
+    if url:
+        return url
+
+    url = config.get_main_option("sqlalchemy.url")
+    if url and url != "driver://user:pass@localhost/dbname":
+        return url
+
+    raise RuntimeError(
+        "DATABASE_URL is not set and alembic.ini sqlalchemy.url is not configured. "
+        "Set DATABASE_URL (recommended) or set sqlalchemy.url in alembic.ini."
+    )
+
 
 def run_migrations_offline() -> None:
     url = get_url()
@@ -36,13 +49,11 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     url = get_url()
-    section = config.get_section(config.config_ini_section) or {}
-    section["sqlalchemy.url"] = url
 
-    connectable = engine_from_config(
-        section,
-        prefix="sqlalchemy.",
+    connectable = sa.create_engine(
+        url,
         poolclass=pool.NullPool,
+        future=True,
     )
 
     with connectable.connect() as connection:
@@ -51,8 +62,10 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
         )
+
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()
